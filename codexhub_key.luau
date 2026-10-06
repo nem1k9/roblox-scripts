@@ -6,13 +6,14 @@ local isColdWar = game.PlaceId == 13687899540 or game.GameId == 4750561026
 local isPyramid = game.PlaceId == 123720558354386 or game.GameId == 10765012427
 local isBlox = game.GameId == 994732206
 local isSlayers = game.PlaceId == 136406881576517
-if not isColdWar and not isPyramid and not isBlox and not isSlayers then
+local isSniper = game.GameId == 7264587281
+if not isColdWar and not isPyramid and not isBlox and not isSlayers and not isSniper then
     getgenv().SCRIPT_KEY = nil
     getgenv().UI_CLOSED = true
-    warn("[Hub] Supported games: Cold War [VIETNAM], Build the Pyramid!, Blox Fruits, Slayers 2 (Ouwland)")
+    warn("[Hub] Supported games: Cold War [VIETNAM], Build the Pyramid!, Blox Fruits, Slayers 2 (Ouwland), SNIPER DUELS")
     return
 end
-local accessGameName = isSlayers and "Slayers 2 | Ouwland" or isBlox and "Blox Fruits" or (isPyramid and "Build the Pyramid!" or "Cold War Vietnam")
+local accessGameName = isSniper and "SNIPER DUELS" or isSlayers and "Slayers 2 | Ouwland" or isBlox and "Blox Fruits" or (isPyramid and "Build the Pyramid!" or "Cold War Vietnam")
 -- JNKIE inline UI: public interface only; no private API keys.
 getgenv().SCRIPT_KEY = nil
 getgenv().UI_CLOSED = false
@@ -207,6 +208,7 @@ guide:Divider()
 guide:SubLabel({ Text = "Key provider: JNKIE\nAdvertising: Work.ink\nDuration: 24 hours\nMenu shortcut: Right Alt" })
 local featuresLeft = featuresTab:Section({ Side = "Left" })
 local featuresRight = featuresTab:Section({ Side = "Right" })
+featuresLeft:Paragraph({ Header = "SNIPER DUELS", Body = "Aim and Silent Aim with Head / Body selection, FOV and visibility checks; player ESP; shoulder camera with mouse lock; Bunny Hop and local pose rotation. All functions start disabled. Maclib menu." })
 featuresLeft:Paragraph({ Header = "Slayers 2 | Ouwland", Body = "Auto level quests, selected boss farming without quests, breathing training and resource farming, skill tree upgrades, selectable opening skills, optional autoblock, chest and nearby item collection, weapon selection, nearest Home setup and automatic farm continuation after respawn. Rayfield menu." })
 featuresLeft:Paragraph({ Header = "Blox Fruits", Body = "Auto level quests, material farming, sea detection, island travel, farming above enemies, faster attack readiness checks, fruit gacha and special quests. Current-race V2/V3 assistance; PvP, Sea Beast skills and V4 trials need manual completion. Maclib menu." })
 featuresLeft:Paragraph({ Header = "Build the Pyramid!", Body = "Auto farm blocks, auto train strength and speed, automatic bonus-pool training between pyramids, coin upgrades, redeem codes, skip cutscenes and block Robux prompts. Rayfield menu." })
@@ -245,7 +247,7 @@ corner.Parent = menuButton
 local border = Instance.new("UIStroke")
 border.Color = Color3.fromRGB(65, 65, 70)
 border.Parent = menuButton
-local target = { window = gateWindow, kind = "Maclib" }
+local target = { window = gateWindow, kind = "Maclib", closed = false }
 local active, handedOff = true, false
 local clicked = menuButton.Activated:Connect(function()
     if not active or target.closed then return end

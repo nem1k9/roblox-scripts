@@ -10,7 +10,15 @@ Loader URL: https://raw.githubusercontent.com/nem1k9/roblox-scripts/main/codexhu
 
 Get a key: https://jnkie.com/get-key/codexhub
 
-One shared key for all four games. Keys are saved in the executor workspace when file access is supported and validated online on startup. Right Alt toggles the menu on PC; touch devices have an on-screen menu button. Protected game modules are delivered through JNKIE.
+One shared key for all five games. Keys are saved in the executor workspace when file access is supported and validated online on startup. Right Alt toggles the menu on PC; touch devices have an on-screen menu button. Protected game modules are delivered through JNKIE.
+
+## SNIPER DUELS
+
+Title: Codex Hub | Aim, Silent Aim, ESP, Third Person
+
+Codex Hub detects SNIPER DUELS by universe ID 7264587281 and starts its Maclib module after the shared JNKIE key is validated. Includes Aim, Silent Aim with Head/Body selection, FOV and visibility checks, player ESP, a shoulder camera with mouse lock, Bunny Hop and local pose rotation. All gameplay functions start disabled. Network pose packet modifications are excluded.
+
+Uses the same loader and key link as the other games; no separate key or extra loader request is required.
 
 ## Cold War [VIETNAM]
 
