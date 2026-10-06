@@ -107,9 +107,16 @@ if not ok then message("Startup failed: " .. tostring(runtimeError)) end
 
     end
     downloadProtectedScript()
-    if env.__CODEX_HUB_READY == token then
-        if env.__CODEX_GATE_WINDOW then pcall(function() env.__CODEX_GATE_WINDOW:Unload() end) end
-    elseif type(env.__CODEX_GATE_STATUS)=="function" then
+    -- JNKIE may start its protected chunk asynchronously. Its UI-owner thread closes
+    -- the access window when the matching ready acknowledgement arrives.
+    local readyDeadline = os.clock() + 30
+    local loaderState = env.__CODEX_LOADER
+    if loaderState and (loaderState.retryAt or 0) <= os.clock() then
+        while env.__CODEX_HUB_READY ~= token and os.clock() < readyDeadline and not env.UI_CLOSED do
+            task.wait(0.1)
+        end
+    end
+    if env.__CODEX_HUB_READY ~= token and type(env.__CODEX_GATE_STATUS)=="function" then
         local remaining=env.__CODEX_LOADER and math.max(0,(env.__CODEX_LOADER.retryAt or 0)-os.clock()) or 0
         env.__CODEX_GATE_STATUS("Script not started", "JNKIE did not finish startup. See the executor console. Wait "..math.ceil(remaining).." seconds before rerunning. Get key still works.")
     end
