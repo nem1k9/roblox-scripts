@@ -1,3 +1,6 @@
+local hubEnv = getgenv()
+hubEnv.__CODEX_ATTEMPT_TOKEN = nil
+hubEnv.__CODEX_MENU_TARGET = nil
 if not game:IsLoaded() then game.Loaded:Wait() end
 local isColdWar = game.PlaceId == 13687899540 or game.GameId == 4750561026
 local isPyramid = game.PlaceId == 123720558354386 or game.GameId == 10765012427
@@ -101,6 +104,11 @@ if not okUI or type(GateMaclib) ~= "table" then
 end
 local previousGate = getgenv().__CODEX_GATE_WINDOW
 if previousGate then pcall(function() previousGate:Unload() end) end
+if type(hubEnv.__CODEX_GATE_CLOSE) == "function" then pcall(hubEnv.__CODEX_GATE_CLOSE) end
+if type(hubEnv.__CODEX_MENU_CLEANUP) == "function" then pcall(hubEnv.__CODEX_MENU_CLEANUP) end
+local guiParent = (gethui and gethui()) or game:GetService("CoreGui")
+local beforeGui = {}
+for _, child in ipairs(guiParent:GetChildren()) do beforeGui[child] = true end
 local gateWindow = GateMaclib:Window({
     Title = "Codex Hub",
     Subtitle = accessGameName .. " | Access",
@@ -108,9 +116,25 @@ local gateWindow = GateMaclib:Window({
     DragStyle = 1,
     DisabledWindowControls = {},
     ShowUserInfo = false,
-    Keybind = Enum.KeyCode.LeftAlt,
+    Keybind = Enum.KeyCode.RightAlt,
     AcrylicBlur = false,
 })
+local gateRoot
+for _, child in ipairs(guiParent:GetChildren()) do
+    if child:IsA("ScreenGui") and not beforeGui[child] then gateRoot = child end
+end
+if gateRoot then gateRoot.Name = "CodexHubAccess" end
+local function closeGate()
+    -- Run from the UI's own thread: game modules may change the loader's capabilities.
+    pcall(function() gateWindow:SetKeybind(Enum.KeyCode.Unknown) end)
+    pcall(function() gateWindow:SetState(false) end)
+    local ok, err = pcall(function() gateWindow:Unload() end)
+    if gateRoot and gateRoot.Parent then gateRoot:Destroy() end
+    if not ok then warn("[Codex Hub] Access window cleanup: " .. tostring(err)) end
+    gateClosed = true
+    if hubEnv.__CODEX_GATE_WINDOW == gateWindow then hubEnv.__CODEX_GATE_WINDOW = nil end
+end
+hubEnv.__CODEX_GATE_CLOSE = closeGate
 getgenv().__CODEX_GATE_WINDOW = gateWindow
 local gateTabs = gateWindow:TabGroup()
 local accessTab = gateTabs:Tab({ Name = "Access", Image = "rbxassetid://10723416652" })
@@ -180,7 +204,7 @@ guide:Paragraph({ Header = "1. Get your link", Body = KEY_LINK .. "\nGet key cop
 guide:Paragraph({ Header = "2. Complete Work.ink", Body = "Finish the checkpoint and return to JNKIE to receive your key." })
 guide:Paragraph({ Header = "3. Unlock the menu", Body = "Paste the key into Access key and click Verify key." })
 guide:Divider()
-guide:SubLabel({ Text = "Key provider: JNKIE\nAdvertising: Work.ink\nDuration: 24 hours\nMenu shortcut: Left Alt" })
+guide:SubLabel({ Text = "Key provider: JNKIE\nAdvertising: Work.ink\nDuration: 24 hours\nMenu shortcut: Right Alt" })
 local featuresLeft = featuresTab:Section({ Side = "Left" })
 local featuresRight = featuresTab:Section({ Side = "Right" })
 featuresLeft:Paragraph({ Header = "Slayers 2 | Ouwland", Body = "Auto level-based kill quests, optional boss hunts, boss chest collection, weapon selection, optional katana purchase, adaptive hover combat and low-health retreat. Rayfield menu." })
@@ -197,6 +221,58 @@ gateWindow.onUnloaded(function()
     if getgenv().__CODEX_GATE_STATUS == setStatus then getgenv().__CODEX_GATE_STATUS = nil end
 end)
 accessTab:Select()
+-- The toggle lives outside either window, so hiding a menu cannot hide its button.
+local menuGui = Instance.new("ScreenGui")
+menuGui.Name = "CodexHubMenuToggle"
+menuGui.ResetOnSpawn = false
+menuGui.DisplayOrder = 2147483647
+menuGui.Parent = guiParent
+local menuButton = Instance.new("TextButton")
+menuButton.Name = "ToggleMenu"
+menuButton.Size = UDim2.fromOffset(112, 42)
+menuButton.AnchorPoint = Vector2.new(1, 0)
+menuButton.Position = UDim2.new(1, -16, 0, 64)
+menuButton.BackgroundColor3 = Color3.fromRGB(24, 24, 27)
+menuButton.TextColor3 = Color3.fromRGB(240, 240, 240)
+menuButton.Text = "Codex Hub"
+menuButton.TextSize = 15
+menuButton.Font = Enum.Font.GothamMedium
+menuButton.Visible = game:GetService("UserInputService").TouchEnabled
+menuButton.Parent = menuGui
+local corner = Instance.new("UICorner")
+corner.CornerRadius = UDim.new(0, 10)
+corner.Parent = menuButton
+local border = Instance.new("UIStroke")
+border.Color = Color3.fromRGB(65, 65, 70)
+border.Parent = menuButton
+local target = { window = gateWindow, kind = "Maclib" }
+local active, handedOff = true, false
+local clicked = menuButton.Activated:Connect(function()
+    if not active or target.closed then return end
+    if target.kind == "Rayfield" then target.window:ToggleHide()
+    else target.window:SetState(not target.window:GetState()) end
+end)
+local function cleanupMenu()
+    active = false
+    clicked:Disconnect()
+    menuGui:Destroy()
+end
+hubEnv.__CODEX_MENU_CLEANUP = cleanupMenu
+task.spawn(function()
+    while active do
+        local token = hubEnv.__CODEX_ATTEMPT_TOKEN
+        if not handedOff and keyAccepted and token and hubEnv.__CODEX_HUB_READY == token then
+            closeGate()
+            handedOff = true
+            target = hubEnv.__CODEX_MENU_TARGET or {closed = true}
+        end
+        if (handedOff and (target.closed or target.window.unloaded)) or (gateClosed and not handedOff) then
+            cleanupMenu()
+            break
+        end
+        task.wait(0.2)
+    end
+end)
 if cachedKey then verifyKey(cachedKey) end
 repeat task.wait(0.1) until keyAccepted or gateClosed
 
