@@ -1,4 +1,5 @@
 -- Codex Hub: GitHub key menu, JNKIE protected gameplay code.
+-- Release: 2026-10-06, shared key and automatic game selection.
 local env = getgenv()
 local existing = env.__CODEX_BOOT
 if existing and existing.running then
